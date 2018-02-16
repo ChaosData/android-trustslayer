@@ -11,7 +11,7 @@ APIs, with specific hooks targeting:
 
 This also disables all certificate pinning, and configures all HTTP(S) traffic
 to go through an HTTP proxy (defaults to `127.0.0.1:8080`, to support
-`adb reverse tcp:8080 tcp:8080`, but it otherwise configurable).
+`adb reverse tcp:8080 tcp:8080`, but is otherwise configurable).
 
 # Usage
 
