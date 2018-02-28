@@ -1,0 +1,22 @@
+{
+  "name": "frida-trustslayer",
+  "version": "1.0.0",
+  "description": "Frida library (and cli tool) to disable certificate validation. Currently supports: Android.",
+  "bin": {
+    "frida-trustslayer": "./bin/cli.js"
+  },
+  "author": "Jeff Dileo <jeff.dileo@nccgroup.trust>",
+  "license": "MIT",
+  "__scripts": {
+    "_prepublishOnly": "npm run build",
+    "_build": "frida-compile agent -o _agent.js",
+    "_watch": "frida-compile agent -o _agent.js -w"
+  },
+  "devDependencies": {
+    "frida-compile": ">=2.0.0"
+  },
+  "dependencies": {
+    "commander": "^2.14.1",
+    "frida": ">=10.6.53"
+  }
+}
