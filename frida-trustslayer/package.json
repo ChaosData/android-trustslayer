@@ -17,6 +17,6 @@
   },
   "dependencies": {
     "commander": "^2.14.1",
-    "frida": ">=10.6.53"
+    "frida": ">=11.0.12"
   }
 }

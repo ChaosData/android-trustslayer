@@ -366,6 +366,54 @@ function deprecatedHttpClient(cfg) {
   };
 }
 
+function volleyTimeoutExtender(cfg) {
+  if (cfg === undefined) {
+    var cfg = {};
+  }
+  if (cfg !== undefined) {
+    if (cfg["RetryPolicyIface"] === undefined) {
+      cfg["RetryPolicyIface"] = "com.android.volley.RetryPolicy";
+    }
+    if (cfg["RetryPolicyIface_getCurrentTimeout"] === undefined) {
+      cfg["RetryPolicyIface_getCurrentTimeout"] = "getCurrentTimeout";
+    }
+    if (cfg["RetryPolicyIface_getCurrentRetryCount"] === undefined) {
+      cfg["RetryPolicyIface_getCurrentRetryCount"] = "getCurrentRetryCount";
+    }
+  }
+
+  var RetryPolicyIface = Java.use(cfg["RetryPolicyIface"]);
+  var ModifierClass = Java.use("java.lang.reflect.Modifier");
+  //var ABSTRACT = ModifierClass.ABSTRACT.value;
+  var INTERFACE = ModifierClass.INTERFACE.value;
+
+  Java.enumerateLoadedClasses({
+    onMatch: function(className) {
+      try {
+        var clazz = Java.use(className);
+      } catch (e) {
+        return;
+      }
+      var mods = clazz.class.getModifiers();
+      if ((mods & INTERFACE) != 0) {
+        return;
+      }
+
+      if (RetryPolicyIface.class.isAssignableFrom(clazz.class)) {
+        try {
+          clazz[cfg["RetryPolicyIface_getCurrentTimeout"]].implementation = function() {
+            return 100000;
+          };
+          clazz[cfg["RetryPolicyIface_getCurrentRetryCount"]].implementation = function() {
+            return 100;
+          };
+        } catch (e) {}
+      }
+    },
+    onComplete: function() {}
+  });
+}
+
 
 function killTrust() {
   var X509TrustManagerIface = Java.use("javax.net.ssl.X509TrustManager");
@@ -476,7 +524,6 @@ function killTrust() {
   });
 }
 
-
 function trustslayer(cfg) {
   console.log("slaying all trust");
   Java.perform(function() {
@@ -485,11 +532,11 @@ function trustslayer(cfg) {
     
     try {
       okhttp3(cfg);
-    } catch (e) { }
+    } catch (e) { console.log(e); }
 
     try {
       okhttp2(cfg);
-    } catch (e) { }
+    } catch (e) { console.log(e); }
 
     try {
       var android_cfg = { "pkg": "com.android.okhttp" };
@@ -498,11 +545,16 @@ function trustslayer(cfg) {
       }
       okhttp2(android_cfg);
       //okhttp2({ "pkg": "com.android.okhttp" });
-    } catch (e) { }
+    } catch (e) { console.log(e); }
     
     try {
       deprecatedHttpClient(cfg);
-    } catch (e) { }
+    } catch (e) { console.log(e); }
+
+    try {
+      volleyTimeoutExtender(cfg);
+    } catch (e) { console.log(e); }
+
   });
 }
 
@@ -539,6 +591,11 @@ rpc.exports = {
   'apache4': function(cfg) {
     Java.perform(function() {
       deprecatedHttpClient(cfg);
+    });
+  },
+  'volleyTimeoutExtender': function(cfg) {
+    Java.perform(function() {
+      volleyTimeoutExtender(cfg);
     });
   },
 }

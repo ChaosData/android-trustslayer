@@ -31,6 +31,8 @@ async function main() {
 
   platform = program.platform || 'android';
   hooks = program.args || ['all'];
+  hooks = hooks.length == 0 ? ['all'] : hooks;
+  
   config = { }
 
   if (platform == 'android') {
