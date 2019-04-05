@@ -13,10 +13,10 @@
     "_watch": "frida-compile agent -o _agent.js -w"
   },
   "devDependencies": {
-    "frida-compile": ">=2.0.0"
+    "frida-compile": "^8.0.1"
   },
   "dependencies": {
-    "commander": "^2.14.1",
-    "frida": ">=11.0.12"
+    "commander": "^2.20.0",
+    "frida": "^12.4.7"
   }
 }

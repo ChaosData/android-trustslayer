@@ -12,7 +12,7 @@ const pReadFile = promisify(fs.readFile);
 let device, platform, target, paused, config, hooks;
 
 main().catch((err)=>{
-  console.err(err)
+  console.error(err)
 });
 
 async function main() {
@@ -37,38 +37,38 @@ async function main() {
 
   if (platform == 'android') {
     if (!!program.spawn + !!program.gate + !!program.pid > 1) {
-      console.err("Error: Only one of of --spawn/--gate/--pid may be specified.");
+      console.error("Error: Only one of of --spawn/--gate/--pid may be specified.");
       program.help();
     }
     if (!!program.spawn + !!program.gate + !!program.pid < 1) {
-      console.err("Error: One of --spawn/--gate/--pid must be specified.");
+      console.error("Error: One of --spawn/--gate/--pid must be specified.");
       program.help();
     }
     if (!!program.remote + !!program.usb > 1) {
-      console.err("Error: Only one of --remote/--usb may be specified.");
+      console.error("Error: Only one of --remote/--usb may be specified.");
       program.help();
     }
 
     if (!!program.remote + !!program.usb) {
       if (program.gate) {
-        console.err("Error: --gate may only be used with a compatible device specified via --usb/--remote.")
+        console.error("Error: --gate may only be used with a compatible device specified via --usb/--remote.")
         program.help();
       }
     }
 
     if (program.proxy) {
       if (program.proxy === true) {
-        console.err("Error: proxy must be specified for --proxy.");
+        console.error("Error: proxy must be specified for --proxy.");
         program.help();
       }
       let proxy_split = program.proxy.split(':');
       if (proxy_split.length != 2) {
-        console.err("Error: Invalid proxy format does not match host:port.");
+        console.error("Error: Invalid proxy format does not match host:port.");
         program.help();
       }
       let proxy_port = parseInt(proxy_split[1]);
-      if (isNaN(pid) || proxy_port < 0 || proxy_port > 65535) {
-        console.err("Error: Invalid proxy port");
+      if (proxy_port < 0 || proxy_port > 65535) {
+        console.error("Error: Invalid proxy port");
         program.help();
       }
       config["proxy"] = {
@@ -76,6 +76,7 @@ async function main() {
         "port": proxy_port
       }
     }
+
 
     let obfuscated = {};
     /* this format is not actually used (yet)
@@ -114,7 +115,7 @@ async function main() {
       try {
         obfuscated = JSON.parse(fs.readFileSync(program.obfuscated, 'utf-8'));
       } catch (err) {
-        console.err(err);
+        console.error(err);
         process.exit(1);
       }
     }
@@ -142,7 +143,7 @@ async function main() {
       try {
         pid = await device.spawn([target]);
       } catch (err) {
-        console.err(err);
+        console.error(err);
         process.exit(1);
       }
       await handle_pid(pid);
@@ -154,21 +155,21 @@ async function main() {
         await device.enableSpawnGating();
         console.log('Waiting for process ' + target + ' to be started.');
       } catch (err) {
-        console.err(err);
+        console.error(err);
         process.exit(1);
       }
     } else if (program.pid && program.pid !== true) {
       paused = false;
       if (program.pid === true) {
-        console.err("Error: pid must be specified for --pid.");
+        console.error("Error: pid must be specified for --pid.");
         program.help();
       }
       let pid = parseInt(program.pid);
       if (isNaN(pid) || pid < 0) {
-        console.err("Error: Invalid --pid");
+        console.error("Error: Invalid --pid");
         program.help();
       } else if (pid === 0 && program.pid != "0") {
-        console.err("Error: Possible error with provided --pid of 0.");
+        console.error("Error: Possible error with provided --pid of 0.");
         program.help();
       }
       handle_pid(pid);
@@ -204,6 +205,10 @@ async function profile_device(session) {
       'is_android': is_android
     });
   `);
+  //console.log(script);
+  //console.log(script.events);
+  //console.log(script.message);
+  /*
   let p = new Promise((res,rej)=>{
     script.events.listen('message', (message, data) => {
       if (message.type == "send") {
@@ -211,6 +216,15 @@ async function profile_device(session) {
       }
     });
   });
+  */
+  let p = new Promise((res,rej)=>{
+    script.message.connect(message => {
+      if (message.type == "send") {
+        res(message.payload);
+      }
+    });
+  });
+
   await script.load();
   let profile = await p;
   await script.unload();
@@ -220,7 +234,7 @@ async function profile_device(session) {
 function validate_profile(profile) {
   if (platform === "android") {
     if (!profile.is_android || !profile.has_java) {
-      console.err("Error: Connected device is not Android.");
+      console.error("Error: Connected device is not Android.");
       process.exit(1);
     }
   }
@@ -239,19 +253,21 @@ async function handle_pid(pid) {
   try {
     session = await device.attach(pid);
   } catch (err) {
-    console.err(err);
+    console.error(err);
     process.exit(1);
   }
   let profile = await profile_device(session);
   validate_profile(profile);
   const agent_script = await load_agent(session);
-  const TrustSlayer = await agent_script.getExports();
+  //const TrustSlayer = await agent_script.getExports();
+  const TrustSlayer = await agent_script.exports;
+  console.log(TrustSlayer);
   for (var h of hooks) {
     console.log('Running hook "' + h + '"');
     try {
       await TrustSlayer[h](config);
     } catch (err) {
-      console.err(err);
+      console.error(err);
     }
   }
   console.log("Finished configuring hooks!");
