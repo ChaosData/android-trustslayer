@@ -261,7 +261,7 @@ async function handle_pid(pid) {
   const agent_script = await load_agent(session);
   //const TrustSlayer = await agent_script.getExports();
   const TrustSlayer = await agent_script.exports;
-  console.log(TrustSlayer);
+  //console.log(TrustSlayer);
   for (var h of hooks) {
     console.log('Running hook "' + h + '"');
     try {

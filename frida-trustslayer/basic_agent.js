@@ -1,3 +1,53 @@
+function yoloproxy(cfg) {
+  if (cfg === undefined) {
+    var cfg = {};
+  }
+  if (cfg !== undefined) {
+    if (cfg["proxy"] === undefined) {
+      cfg["proxy"] = {};
+    }
+    if (cfg["proxy"]["host"] === undefined) {
+      cfg["proxy"]["host"] = "127.0.0.1";
+    }
+    if (cfg["proxy"]["port"] === undefined) {
+      cfg["proxy"]["port"] = 8080;
+    }
+  }
+
+  function getProperty1(key) {
+    return getProperty2(key, undefined);
+  }
+
+  var proxy_host = cfg["proxy"]["host"];
+  var proxy_port = "" + cfg["proxy"]["port"];
+  function getProperty2(key, def) {
+    var vals = {
+      'http.proxyHost': proxy_host,
+      'https.proxyHost': proxy_host,
+      'proxyHost': proxy_host,
+      'http.proxyPort': proxy_port,
+      'https.proxyPort': proxy_port,
+      'proxyPort': proxy_port,
+      
+    };
+    if (vals[key] !== undefined) {
+      return vals[key];
+    }
+    if (def === undefined) {
+      return this.getProperty(key);
+    } else {
+      return this.getProperty(key, def);
+    }
+  }
+
+  var System = Java.use('java.lang.System');  
+  System.getProperty.overload(
+    'java.lang.String'
+  ).implementation = getProperty1;
+  System.getProperty.overload(
+    'java.lang.String', 'java.lang.String'
+  ).implementation = getProperty2;
+}
 
 function okhttp3(cfg) {
   /* This function will override the OkHttpClient constructor to inject a Proxy
@@ -531,28 +581,38 @@ function trustslayer(cfg) {
     killTrust();
     
     try {
-      okhttp3(cfg);
+      var _ = JSON.parse(JSON.stringify(cfg));
+      yoloproxy(_);
     } catch (e) { console.log(e); }
 
     try {
-      okhttp2(cfg);
+      var _ = JSON.parse(JSON.stringify(cfg));
+      okhttp3(_);
     } catch (e) { console.log(e); }
 
     try {
-      var android_cfg = { "pkg": "com.android.okhttp" };
-      if (cfg["proxy"]) {
-        android_cfg["proxy"] = cfg["proxy"];
-      }
-      okhttp2(android_cfg);
+      var _ = JSON.parse(JSON.stringify(cfg));
+      okhttp2(_);
+    } catch (e) { console.log(e); }
+
+    try {
+      var _ = JSON.parse(JSON.stringify(cfg));
+      Object.assign(_, { "pkg": "com.android.okhttp" });
+      /*if (cfg["proxy"]) {
+        _["proxy"] = cfg["proxy"];
+      }*/
+      okhttp2(_);
       //okhttp2({ "pkg": "com.android.okhttp" });
     } catch (e) { console.log(e); }
     
     try {
-      deprecatedHttpClient(cfg);
+      var _ = JSON.parse(JSON.stringify(cfg));
+      deprecatedHttpClient(_);
     } catch (e) { console.log(e); }
 
     try {
-      volleyTimeoutExtender(cfg);
+      var _ = JSON.parse(JSON.stringify(cfg));
+      volleyTimeoutExtender(_);
     } catch (e) { console.log(e); }
 
   });
@@ -596,6 +656,11 @@ rpc.exports = {
   'volleyTimeoutExtender': function(cfg) {
     Java.perform(function() {
       volleyTimeoutExtender(cfg);
+    });
+  },
+  'yoloproxy': function(cfg) {
+    Java.perform(function() {
+      yoloproxy(cfg);
     });
   },
 }
