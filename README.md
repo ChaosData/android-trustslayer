@@ -40,7 +40,7 @@ The hooks are configurable, such that the names of the involved classes can be
 reconfigured to match whatever Proguard has renamed them to. It's on you to
 figure out the proguarded names though.
 
-# Future Work (prior to release)
+# Future Work
 
 * Optimize to use one class/instance enumeration pass each
 * Cleanup using `frida-compile`
